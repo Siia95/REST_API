@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends, status, Security, BackgroundTasks, Request
+from fastapi_limiter.depends import RateLimiter
 from sqlalchemy.orm import Session
 import crud
 import models
@@ -7,17 +8,15 @@ from database import get_db, SessionLocal
 from datetime import datetime, timedelta
 from typing import List
 from fastapi_limiter import FastAPILimiter
-from fastapi_limiter.depends import RateLimiterDependency
-from main import limiter_dependency
-
 
 
 
 router = APIRouter()
 
-@router.post("/contacts/", response_model=schemas.Contact)
-def create_contact(contact: dict, rate_limiter: RateLimiterDependency = Depends(limiter_dependency)):
-    return crud.create_contact(db, contact)
+@router.post("/contacts/", response_model=schemas.Contact, description='No more than 10 requests per minute',
+             dependencies=[Depends(RateLimiter(times=10, seconds=60))])
+def create_contact(contact: dict, limit: int = 100, db: Session = Depends(get_db)):
+    return crud.create_contact(db, contact, limit)
 
 @router.get("/contacts/", response_model=List[schemas.Contact])
 def read_contacts(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):

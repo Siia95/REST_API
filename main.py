@@ -1,42 +1,42 @@
+import os
 from datetime import datetime, timedelta
-from fastapi_mail import FastMail
-from fastapi import FastAPI, Depends, HTTPException, status, BackgroundTasks, Request
-from sqlalchemy.testing import db
-from fastapi.responses import JSONResponse
-import redis.asyncio as redis
-from sqlalchemy import create_engine
-from fastapi_limiter import FastAPILimiter
-from fastapi_limiter.depends import RateLimiterDependency
-import auth
-from database import engine, Base, get_db, Session
-from routers import contact
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from auth import HashPassword, create_user,confirmed_email, create_email_token, get_user_by_email,  \
-    create_access_token, SECRET_KEY, ALGORITHM
-from models import User, UserResponse, UserCreate, TokenResponse, RequestEmail
-from sqlalchemy.orm import Session, sessionmaker
-import jwt
-from jwt import ExpiredSignatureError
-from jose.exceptions import JWTError
-from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
-from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
-import uvicorn
+
+import jwt
+from fastapi import FastAPI, Depends, HTTPException, status, BackgroundTasks, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi_limiter import FastAPILimiter
+import redis.asyncio as redis
+from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
+from jose.exceptions import JWTError
+from jwt import ExpiredSignatureError
 from pydantic import EmailStr, BaseModel
-from typing import List
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
+
+import auth
+from auth import HashPassword, create_email_token, get_user_by_email, \
+    create_access_token, SECRET_KEY, ALGORITHM
+from config import settings
+from database import engine, Base, get_db
+from models import User, UserCreate, TokenResponse, RequestEmail
+from routers import contact
 from routers.contact import create_contact
+
 
 class EmailSchema(BaseModel):
     email: EmailStr
 
 
 conf = ConnectionConfig(
-    MAIL_USERNAME="test_for_mail@meta.ua",
-    MAIL_PASSWORD="Grottersha95",
-    MAIL_FROM="test_for_mail@meta.ua",
-    MAIL_PORT=465,
-    MAIL_SERVER="smtp.meta.ua",
-    MAIL_FROM_NAME="Example email",
+    MAIL_USERNAME=settings.mail_username,
+    MAIL_PASSWORD=settings.mail_password,
+    MAIL_FROM=settings.mail_from,
+    MAIL_PORT=settings.mail_port,
+    MAIL_SERVER=settings.mail_server,
+    MAIL_FROM_NAME="Desired Name",
     MAIL_STARTTLS=False,
     MAIL_SSL_TLS=True,
     USE_CREDENTIALS=True,
@@ -59,13 +59,11 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 REFRESH_TOKEN_EXPIRE_MINUTES = 1440
 
 
-limiter = FastAPILimiter(
-    key_func=lambda _: "global",  # Глобальне обмеження
-    rate_limit="10/minute",  # Обмеження: не більше 10 запитів на хвилину
-)
-limiter_dependency = RateLimiterDependency(limiter)
-
-app.include_router(create_contact.router)
+@app.on_event("startup")
+async def startup():
+    r = await redis.Redis(host=settings.redis_host, port=settings.redis_port, db=0, encoding="utf-8",
+                          decode_responses=True)
+    await FastAPILimiter.init(r)
 
 origins = [
     "http://localhost:3000"

@@ -1,4 +1,6 @@
 from passlib.context import CryptContext
+
+from config import settings
 from models import User
 from database import SessionLocal, Session
 from datetime import datetime, timedelta
@@ -10,8 +12,8 @@ from jose.exceptions import JWTError
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-SECRET_KEY = "qaz_12345"
-ALGORITHM = "HS256"
+SECRET_KEY = settings.secret_key
+ALGORITHM = settings.algorithm
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 class HashPassword:

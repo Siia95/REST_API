@@ -18,8 +18,11 @@ pydantic = "*"
 fastapi-limiter = "*"
 fastapi-cors = "*"
 cloudinary = "*"
+python-dotenv = "*"
+typing-extensions = "*"
+pydantic-settings = "*"
 
 [dev-packages]
 
 [requires]
-python_version = "3.11"
+python_version = "3.11.5"
