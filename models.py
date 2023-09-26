@@ -1,6 +1,10 @@
-from sqlalchemy import Column, Integer, String, Date
+from sqlalchemy import Column, Integer, String, Date, DateTime, Boolean, ForeignKey
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
 from database import Base
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
+from datetime import timedelta
+
 
 
 class Contact(Base):
@@ -21,6 +25,9 @@ class User(Base):
     username = Column(String, unique=True, index=True)
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
+    confirmed = Column(Boolean, default=False)
+    verification_tokens = relationship("VerificationToken", back_populates="user")
+    avatar_url = Column(String)
 
 class UserCreate(BaseModel):
     username: str
@@ -35,3 +42,18 @@ class UserResponse(BaseModel):
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str
+
+class VerificationToken(Base):
+    __tablename__ = "verification_tokens"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    token = Column(String, unique=True, index=True)
+    expires_at = Column(DateTime, default=func.now() + timedelta(minutes=30))
+
+    user = relationship("User", back_populates="verification_tokens")
+
+class RequestEmail(BaseModel):
+    email: EmailStr
+
+

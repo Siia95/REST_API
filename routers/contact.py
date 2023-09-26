@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException, Depends, status, Security, BackgroundTasks, Request
 from sqlalchemy.orm import Session
 import crud
 import models
@@ -6,12 +6,17 @@ import schemas
 from database import get_db, SessionLocal
 from datetime import datetime, timedelta
 from typing import List
+from fastapi_limiter import FastAPILimiter
+from fastapi_limiter.depends import RateLimiterDependency
+from main import limiter_dependency
+
+
 
 
 router = APIRouter()
 
 @router.post("/contacts/", response_model=schemas.Contact)
-def create_contact(contact: schemas.ContactCreate, db: Session = Depends(get_db)):
+def create_contact(contact: dict, rate_limiter: RateLimiterDependency = Depends(limiter_dependency)):
     return crud.create_contact(db, contact)
 
 @router.get("/contacts/", response_model=List[schemas.Contact])

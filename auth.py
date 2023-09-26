@@ -1,6 +1,6 @@
 from passlib.context import CryptContext
 from models import User
-from database import SessionLocal
+from database import SessionLocal, Session
 from datetime import datetime, timedelta
 from fastapi import Depends, HTTPException
 from passlib.context import CryptContext
@@ -43,10 +43,8 @@ def authenticate_user(email: str, password: str):
     if user and pwd_context.verify(password, user.hashed_password):
         return user
 
-def get_user_by_email(email: str):
-    db = SessionLocal()
+async def get_user_by_email(email: str, db: Session) -> User:
     user = db.query(User).filter_by(email=email).first()
-    db.close()
     return user
 
 def create_access_token(data: dict, expires_delta: timedelta = None):
@@ -59,3 +57,14 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+async def confirmed_email(email: str, db: Session) -> None:
+    user = await get_user_by_email(email, db)
+    user.confirmed = True
+    db.commit()
+
+def create_email_token(data: dict):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + timedelta(days=7)
+    to_encode.update({"iat": datetime.utcnow(), "exp": expire})
+    token = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return token.decode('utf-8')

@@ -12,8 +12,14 @@ psycopg2-binary = "*"
 fastapi-jwt-auth = "*"
 passlib = "*"
 python-jose = "*"
+fastapi-mail = "*"
+redis = "*"
+pydantic = "*"
+fastapi-limiter = "*"
+fastapi-cors = "*"
+cloudinary = "*"
 
 [dev-packages]
 
 [requires]
-python_version = "3.9"
+python_version = "3.11"
