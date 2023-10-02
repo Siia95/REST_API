@@ -83,6 +83,13 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 @app.post("/update-avatar/")
 async def update_avatar(user_id: int, avatar_url: str):
+    """
+        Update the avatar URL for a user.
+
+        :param user_id: The ID of the user.
+        :param avatar_url: The new avatar URL.
+        :return: A message indicating the success of the operation.
+        """
     db = SessionLocal()
     user = db.query(User).filter(User.id == user_id).first()
 
@@ -100,6 +107,15 @@ async def update_avatar(user_id: int, avatar_url: str):
 @app.post("/register/", response_model=UserCreate)
 async def register_user(user: UserCreate, db: Session = Depends(get_db), background_tasks: BackgroundTasks = BackgroundTasks(),
     request: Request = None):
+    """
+        Register a new user.
+
+        :param user: User registration data.
+        :param db: Database session.
+        :param background_tasks: Background tasks for sending confirmation email.
+        :param request: The HTTP request.
+        :return: User registration details.
+        """
     # Перевірка, чи користувач із таким email вже існує
     existing_user = db.query(User).filter(User.email == user.email).first()
     if existing_user:
@@ -117,6 +133,15 @@ async def register_user(user: UserCreate, db: Session = Depends(get_db), backgro
 @app.post('/request_email')
 async def request_email(body: RequestEmail, background_tasks: BackgroundTasks, request: Request,
                         db: Session = Depends(get_db)):
+    """
+        Request email confirmation.
+
+        :param body: Request email data.
+        :param background_tasks: Background tasks for sending confirmation email.
+        :param request: The HTTP request.
+        :param db: Database session.
+        :return: A message indicating the success of the operation.
+        """
     user = await get_user_by_email(body.email, db)
 
     if not user:
@@ -131,6 +156,13 @@ async def request_email(body: RequestEmail, background_tasks: BackgroundTasks, r
 
 @app.post("/token/", response_model=TokenResponse)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    """
+        Log in and get an access token.
+
+        :param form_data: Form data containing login credentials.
+        :param db: Database session.
+        :return: Access and refresh tokens.
+        """
     user = db.query(User).filter(User.email == form_data.username).first()
     if user is None or not HashPassword().verify_password(form_data.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Incorrect email or password")
@@ -170,10 +202,22 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
 
 @app.get("/protected/")
 async def protected_route(current_user: User = Depends(oauth2_scheme)):
+    """
+        A protected route that requires a valid access token.
+
+        :param current_user: The current authenticated user.
+        :return: A message indicating the success of accessing the protected route.
+        """
     return {"message": "This is a protected route", "user": current_user}
 
 
 async def get_email_from_token(token: str):
+    """
+        Get the email from a JWT token.
+
+        :param token: JWT token.
+        :return: The email extracted from the token.
+        """
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email = payload["sub"]
@@ -186,6 +230,13 @@ async def get_email_from_token(token: str):
 
 @app.get('/confirmed_email/{token}')
 async def confirmed_email(token: str, db: Session = Depends(get_db)):
+    """
+        Confirm the user's email using a confirmation token.
+
+        :param token: Confirmation token.
+        :param db: Database session.
+        :return: A message indicating the success of email confirmation.
+        """
     email = await get_email_from_token(token)
     user = await get_user_by_email(email, db)
     if user is None:
@@ -197,6 +248,13 @@ async def confirmed_email(token: str, db: Session = Depends(get_db)):
 
 @app.post("/refresh-token/", response_model=TokenResponse)
 async def refresh_access_token(refresh_token: str, db: Session = Depends(get_db)):
+    """
+        Refresh the access token using a refresh token.
+
+        :param refresh_token: Refresh token.
+        :param db: Database session.
+        :return: The new access token.
+        """
     try:
         payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
         email = payload.get("sub")
@@ -220,6 +278,13 @@ async def refresh_access_token(refresh_token: str, db: Session = Depends(get_db)
         raise HTTPException(status_code=401, detail="Invalid refresh token")
 
 async def send_email(email: EmailStr, username: str, host: str):
+    """
+        Send an email for user registration or confirmation.
+
+        :param email: The email address of the recipient.
+        :param username: The username of the recipient.
+        :param host: The base URL of the application.
+        """
     try:
         token_verification = create_email_token({"sub": email})
 

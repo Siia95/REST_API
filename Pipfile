@@ -21,6 +21,8 @@ cloudinary = "*"
 python-dotenv = "*"
 typing-extensions = "*"
 pydantic-settings = "*"
+sphinx = "*"
+pytest = "*"
 
 [dev-packages]
 

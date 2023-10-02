@@ -8,6 +8,9 @@ from datetime import timedelta
 
 
 class Contact(Base):
+    """
+        Database model for contacts.
+        """
     __tablename__ = "contacts"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -19,6 +22,9 @@ class Contact(Base):
     extra_data = Column(String, nullable=True)
 
 class User(Base):
+    """
+        Database model for users.
+        """
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -30,20 +36,32 @@ class User(Base):
     avatar_url = Column(String)
 
 class UserCreate(BaseModel):
+    """
+        Pydantic model for creating a new user.
+        """
     username: str
     email: str
     password: str
 
 class UserResponse(BaseModel):
+    """
+        Pydantic model for user response.
+        """
     id: int
     username: str
     email: str
 
 class TokenResponse(BaseModel):
+    """
+        Pydantic model for token response.
+        """
     access_token: str
     token_type: str
 
 class VerificationToken(Base):
+    """
+        Database model for verification tokens.
+        """
     __tablename__ = "verification_tokens"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -54,6 +72,9 @@ class VerificationToken(Base):
     user = relationship("User", back_populates="verification_tokens")
 
 class RequestEmail(BaseModel):
+    """
+        Pydantic model for email requests.
+        """
     email: EmailStr
 
 
